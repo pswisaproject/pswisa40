@@ -23,13 +23,15 @@ try {
             $httpQuery = $request->getQuery();
             $url       = $httpQuery['_url'];
 
+            $hash = $request->getHeader('hash');
+
             if (in_array($url, RoutingHelper::AUTHENTICATION_MIDDLEWARE_EXCEPTIONS) ||
                 RoutingHelper::checkUrlToExceptionContains($url)) {
                 return true;
             }
 
             if (empty($hash)) {
-                // throw new Exception('Invalid request!');
+                throw new Exception('Invalid request! Unauthorized.');
             } else {
                 // $auth   = new AuthenticationMiddleware($app);
                 // $result = $auth->isUserAuthenticated();

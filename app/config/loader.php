@@ -7,7 +7,8 @@ $loader->registerNamespaces(
         'App\Controllers'     => realpath(__DIR__ . '/../controllers/'),
         'App\Models'          => realpath(__DIR__ . '/../models/'),
         'App\Libs'            => realpath(__DIR__ . '/../libs/'),
-        'App\Helpers'         => realpath(__DIR__ . '/../helpers/')
+        'App\Helpers'         => realpath(__DIR__ . '/../helpers/'),
+        'App\Globals'         => realpath(__DIR__ . '/../globals/')
     ]
 );
 
