@@ -7,9 +7,6 @@ use App\Models\Users;
 use App\Services\UsersService;
 use App\Helpers\Validators\RegistrationValidator;
 
-/**
- * Operations with Users: CRUD
- */
 class UsersController extends AbstractController
 {
     public function loginAction()
