@@ -5,7 +5,7 @@ return new \Phalcon\Config(
         'database'     => [
             'adapter'  => 'mysql',
             'host'     => 'localhost',
-            'username' => 'phpMyAdmin',
+            'username' => 'root',
             'password' => 'LogicS',
             'dbname'   => 'pswisa',
             'charset'  => 'utf8mb4'
