@@ -6,6 +6,7 @@ use App\Controllers\HttpExceptions\Http400Exception;
 use App\Models\Users;
 use App\Services\UsersService;
 use App\Helpers\Validators\RegistrationValidator;
+use App\Helpers\MailerHelper;
 
 class UsersController extends AbstractController
 {
@@ -43,6 +44,8 @@ class UsersController extends AbstractController
             UsersService::register($id, $firstName, $lastName, $email, $password, 
                                               $address, $city, $country, $phone);
 
+            $mailerHelper = new MailerHelper();
+            $mailerHelper::sendMail($email, 'Confirm your registration.', 'Please confirm your registration at this link: www.temporary.com');
             return ['data' => [], 'message' => 'User successfully registered!'];
         } catch (\Throwable $th) {
             throw $th;
