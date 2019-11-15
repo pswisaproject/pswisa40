@@ -10,7 +10,8 @@
         "zendframework/zend-stdlib": "^3.2",
         "doctrine/annotations": "^1.8",
         "zendframework/zend-xmlrpc": "^2.8",
-        "zendframework/zend-json": "^3.1"
+        "zendframework/zend-json": "^3.1",
+        "phpmailer/phpmailer": "^6.1"
     },
     "require-dev": {
         "phalcon/devtools": "~3.4"
