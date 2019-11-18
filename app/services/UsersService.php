@@ -3,10 +3,13 @@
 namespace App\Services;
 
 use App\Models\Users;
+use App\Models\UserSession;
 
 class UsersService extends AbstractService
 {
     /* --------------------- ERRORS ------------------------------- */
+
+    /* --------------------- REGISTRATION ERRORS ------------------ */
     const ERROR_INVALID_REG_ID = 10001;
     const ERROR_INVALID_REG_FIRST_NAME = 10002;
     const ERROR_INVALID_REG_LAST_NAME = 10003;
@@ -19,6 +22,12 @@ class UsersService extends AbstractService
     const ERROR_ID_ALREADY_TAKEN = 10010;
     const ERROR_EMAIL_ALREADY_TAKEN = 10011;
 
+    /* --------------------- LOGIN ERRORS ------------------ */
+
+    const ERROR_INVALID_USER_CREDENTIALS = 11001;
+    const ERROR_USER_NOT_ACTIVE = 11002;
+    const ERROR_USER_NOT_VERIFIED = 11003;
+
     /* --------------- USER SERVICE FUNCTIONS --------------- */
     
     public function getUserList()
@@ -26,9 +35,23 @@ class UsersService extends AbstractService
 
     }
 
-    public function createLogin()
+    public function login($userId, $hashToken)
     {
-    
+        try {
+            $userSessionModel                   = new UserSession();
+            $userSessionModel->user_id          = $userId;
+            $userSessionModel->token            = $hashToken;
+            $userSessionModel->created_at       = date("Y-m-d H:i:s");
+            $userSessionModel->updated_at       = date("Y-m-d H:i:s");
+            $userSessionModel->expire_at        = date("Y-m-d H:i:s", strtotime("+1 month", time()));
+
+            if (!$userSessionModel->create()) {
+                print_r($userSessionModel->getMessages());
+                throw new \Exception('Unable to create user session!');
+            }
+        } catch (\Throwable $th) {
+            print_r("throwable: \n" . $th);
+        }
     }
 
     public function register($id, $firstName, $lastName, $email, $password, 
@@ -46,7 +69,8 @@ class UsersService extends AbstractService
             $usersModel->city = $city;
             $usersModel->country = $country;
             $usersModel->phone = $phone;
-            $usersModel->active = 1;
+            $usersModel->active = 0;
+            $usersModel->verified = 0;
             $usersModel->created_at = date("Y-m-d H:i:s");
             $usersModel->updated_at = date("Y-m-d H:i:s");
 
