@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-class RolesPermissions extends \Phalcon\Mvc\Model
+class RolePermissions extends \Phalcon\Mvc\Model
 {
     public function initialize()
     {

@@ -30,7 +30,7 @@ class UsersService extends AbstractService
 
     /* --------------- USER SERVICE FUNCTIONS --------------- */
     
-    public function getUserList()
+    public function getUsersList()
     {
 
     }
@@ -85,5 +85,19 @@ class UsersService extends AbstractService
     public function editProfile()
     {
       
+    }
+
+    public function getPendingUsersList() {
+        try {
+            $pendingUsers = Users::findByRegRequest('PENDING');
+
+            if (!$pendingUsers) {
+                return [];
+            }
+
+            return $pendingUsers->toArray();
+        } catch (\PDOException $e) {
+            throw new ServiceException($e->getMessage(), $e->getCode(), $e);
+        }
     }
 }

@@ -3,11 +3,13 @@
 namespace App\Controllers;
 
 use App\Controllers\HttpExceptions\Http400Exception;
-use App\Helpers\HashTokenHelper;
 use App\Models\Users;
 use App\Services\UsersService;
 use App\Helpers\Validators\RegistrationValidator;
+use App\Helpers\CommonHelpers;
 use App\Helpers\MailerHelper;
+use App\Helpers\HashTokenHelper;
+use App\Helpers\SQLHelper;
 
 class UsersController extends AbstractController
 {
@@ -109,6 +111,48 @@ class UsersController extends AbstractController
     public function editProfileAction()
     {
        
+    }
+
+    public function getPendingUsersListAction()
+    {
+        $errors = [];
+
+        try {
+            $sqlHelper = new SQLHelper();
+
+            $user      = CommonHelpers::getCurrentUser($this->request);
+            $id        = $user->id;
+
+            $isAuthorized = $sqlHelper->isUserAuthorized($id, 'LIST_PENDING_USERS');
+
+            if (!$isAuthorized) {
+                $errors[] =
+                    [
+                    'invalid_permission' => 'User is not authorized to list company users!',
+                    'error_code'         => UsersService::ERROR_UNAUTHORIZED
+                ];
+                $exception = new Http401Exception(_('Unauthorized access error'), self::ERROR_INVALID_REQUEST);
+                throw $exception->addErrorDetails($errors);
+            }
+
+            try {
+                $pendingUsersList = $this->usersService->getPendingUsersList();
+            } catch (ServiceException $e) {
+                throw new Http500Exception(_('Internal Server Error'), $e->getCode(), $e);
+            }
+
+            return ['data' => ['pending_users' => $pendingUsersList], 'message' => 'Successfully fetched pending users!'];
+
+        } catch (ServiceException $e) {
+            switch ($e->getCode()) {
+                case UsersService::ERROR_UNAUTHORIZED:
+                    throw new Http401Exception($e->getMessage(), $e->getCode(), $e);
+                default:
+                    throw new Http500Exception(_('Internal Server Error'), $e->getCode(), $e);
+            }
+        } catch (\Throwable $th) {
+            throw $th;
+        }
     }
 
     public function testGetAction() {
