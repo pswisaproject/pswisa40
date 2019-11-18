@@ -17,6 +17,7 @@ class AuthenticationMiddleware
         $this->di  = $this->app->getDI();
     }
 
+    // TO-DO
     public function isUserAuthenticated()
     {
 

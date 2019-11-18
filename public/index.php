@@ -31,11 +31,12 @@ try {
             }
 
             if (empty($hash)) {
-                throw new Exception('Invalid request! Unauthorized.');
+                // TO-DO:
+                // throw new Exception('Invalid request! Unauthorized.');
             } else {
+                // TO-DO:
                 // $auth   = new AuthenticationMiddleware($app);
                 // $result = $auth->isUserAuthenticated();
-
             }
 
             $result = true; //temporary

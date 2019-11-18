@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Controllers\HttpExceptions\Http400Exception;
+use App\Helpers\HashTokenHelper;
 use App\Models\Users;
 use App\Services\UsersService;
 use App\Helpers\Validators\RegistrationValidator;
@@ -12,7 +13,60 @@ class UsersController extends AbstractController
 {
     public function loginAction()
     {
-        
+        $errors = [];
+        try {
+            $email = $this->request->getPost('email');
+            $password = $this->request->getPost('password');
+
+            $hashToken = HashTokenHelper::generateHashToken($email);
+            $user = Users::findFirstByEmail($email);
+
+            $userId         = $user->id;
+            $isUserVerified = $user->verified;
+            $isUserActive   = $user->active;
+            
+            if ($email == $user->email && $isUserVerified == 0) {
+                $errors[] =
+                    [
+                    'invalid_login' => 'User is not verified!',
+                    'error_code'    => UsersService::ERROR_USER_NOT_VERIFIED
+                ];
+            }
+
+            if ($email == $user->email && $isUserActive == 0) {
+                $errors[] =
+                    [
+                    'invalid_login' => 'User is disabled!',
+                    'error_code'    => UsersService::ERROR_USER_NOT_ACTIVE
+                ];
+            }
+
+            if ($email !== $user->email || $password !== $user->password) {
+                $errors[] =
+                    [
+                    'invalid_login' => 'Incorrect email or password! Please try again.',
+                    'error_code'    => UsersService::ERROR_INVALID_USER_CREDENTIALS
+                ];
+            }
+
+            if ($errors) {
+                $exception = new Http400Exception(_('Invalid login parameters.'), self::ERROR_INVALID_REQUEST);
+                throw $exception->addErrorDetails($errors);
+            }
+
+            UsersService::login($userId, $hashToken);
+            return ['data' => [], 'message' => 'User successfully logged in!'];
+
+        } catch (ServiceException $e) {
+            switch ($e->getCode()) {
+                case UsersService::ERROR_INVALID_USER_CREDENTIALS:
+                    throw new Http422Exception($e->getMessage(), $e->getCode(), $e);
+                default:
+                    throw new Http500Exception(_('Internal Server Error'), $e->getCode(), $e);
+            }
+        } catch (\Throwable $e) {
+            throw $e;
+        }
     }
 
     public function registerAction()
