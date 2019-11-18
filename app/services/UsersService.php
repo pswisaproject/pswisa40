@@ -117,4 +117,8 @@ class UsersService extends AbstractService
             throw new ServiceException($e->getMessage(), $e->getCode(), $e);
         }
     }
+
+    public function generateRegistrationLink() {
+        
+    }
 }

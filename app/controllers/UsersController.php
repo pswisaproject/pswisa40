@@ -91,7 +91,7 @@ class UsersController extends AbstractController
             if (count($messages)) {
                 foreach ($messages as $message) {
                     $errors[] = [
-                        'code' => $message->getCode(),
+                        'error_code' => $message->getCode(),
                         'message' => $message->getMessage()];
                 }
                 $exception = new Http400Exception(_('Invalid registration parameters'), self::ERROR_BAD_REQUEST);
@@ -186,7 +186,8 @@ class UsersController extends AbstractController
             try {
                 if ($approved == 1) {
                     $result = 'registration approved!';
-                    // SEND A MAIL TO THE USER WITH LINK
+                    $link = HashTokenHelper::generateRegistrationHashToken();
+                    // SEND A MAIL TO THE USER WITH LINK ?confirm=hash
                 } else {
                     $result = 'registration denied!';
                     $mailerHelper::sendMail($email, 'Registration denied!', 
