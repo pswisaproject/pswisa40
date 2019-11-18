@@ -23,14 +23,18 @@ try {
             $httpQuery = $request->getQuery();
             $url       = $httpQuery['_url'];
 
-            $hash = $request->getHeader('hash');
+            $hash            = $request->getHeader('hash');
+            $created_time    = $request->getHeader('ct');
+            $expiration_time = $request->getHeader('et');
 
             if (in_array($url, RoutingHelper::AUTHENTICATION_MIDDLEWARE_EXCEPTIONS) ||
                 RoutingHelper::checkUrlToExceptionContains($url)) {
                 return true;
             }
 
-            if (empty($hash)) {
+            if (empty($hash) ||
+            empty($created_time) ||
+            empty($expiration_time)) {
                 // TO-DO:
                 // throw new Exception('Invalid request! Unauthorized.');
             } else {
