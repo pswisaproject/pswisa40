@@ -10,7 +10,7 @@ $usersCollection->setPrefix('/user');
 
 $usersCollection->post('/login', 'loginAction');
 $usersCollection->post('/register', 'registerAction');
-$usersCollection->post('/handleRegister', 'handleRegistrationAction');
+$usersCollection->post('/handleUserRegister', 'handleUserRegistrationAction');
 $usersCollection->put('/editProfile', 'editProfileAction');
 $usersCollection->get('/list', 'getUsersListAction');
 $usersCollection->get('/listPending', 'getPendingUsersListAction');

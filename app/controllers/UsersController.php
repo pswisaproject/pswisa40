@@ -128,7 +128,7 @@ class UsersController extends AbstractController
             if (!$isAuthorized) {
                 $errors[] =
                     [
-                    'invalid_permission' => 'User is not authorized to list company users!',
+                    'invalid_permission' => 'User is not authorized to list pending users!',
                     'error_code'         => UsersService::ERROR_UNAUTHORIZED
                 ];
                 $exception = new Http401Exception(_('Unauthorized access error'), self::ERROR_INVALID_REQUEST);
@@ -142,6 +142,57 @@ class UsersController extends AbstractController
             }
 
             return ['data' => ['pending_users' => $pendingUsersList], 'message' => 'Successfully fetched pending users!'];
+
+        } catch (ServiceException $e) {
+            switch ($e->getCode()) {
+                case UsersService::ERROR_UNAUTHORIZED:
+                    throw new Http401Exception($e->getMessage(), $e->getCode(), $e);
+                default:
+                    throw new Http500Exception(_('Internal Server Error'), $e->getCode(), $e);
+            }
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
+    public function handleUserRegistrationAction() {
+        // ?userID=id&approved=boolean
+        $errors = [];
+        try {
+            $sqlHelper = new SQLHelper();
+            $user      = CommonHelpers::getCurrentUser($this->request);
+            $id        = $user->id;
+            $isAuthorized = $sqlHelper->isUserAuthorized($id, 'HANDLE_USER_REGISTRATION');
+
+            $userId     = $this->request->get('userID');
+            $approved   = $this->request->get('approved');
+
+            if (!$isAuthorized) {
+                $errors[] =
+                    [
+                    'invalid_permission' => 'User is not authorized to handle user registrations!',
+                    'error_code'         => UsersService::ERROR_UNAUTHORIZED
+                ];
+                $exception = new Http401Exception(_('Unauthorized access error'), self::ERROR_INVALID_REQUEST);
+                throw $exception->addErrorDetails($errors);
+            }
+
+            $result = '';
+            UsersService::handleUserRegistration($userId, $approved);
+            try {
+                if ($approved == 1) {
+                    $result = 'registration approved!';
+                    // SEND A MAIL TO THE USER
+                } else {
+                    $result = 'registration denied!';
+                    // SEND A DIFFERENT MAIL TO THE USER
+                }
+                
+            } catch (ServiceException $e) {
+                throw new Http500Exception(_('Internal Server Error'), $e->getCode(), $e);
+            }
+
+            return ['data' => [], 'message' => 'User ' . $result];
 
         } catch (ServiceException $e) {
             switch ($e->getCode()) {

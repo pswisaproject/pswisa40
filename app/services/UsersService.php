@@ -27,6 +27,7 @@ class UsersService extends AbstractService
     const ERROR_INVALID_USER_CREDENTIALS = 11001;
     const ERROR_USER_NOT_ACTIVE = 11002;
     const ERROR_USER_NOT_VERIFIED = 11003;
+    const ERROR_UNAUTHORIZED = 11004;
 
     /* --------------- USER SERVICE FUNCTIONS --------------- */
     
@@ -96,6 +97,23 @@ class UsersService extends AbstractService
             }
 
             return $pendingUsers->toArray();
+        } catch (\PDOException $e) {
+            throw new ServiceException($e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    public function handleUserRegistration($userId, $approved) {
+        try {
+            $user = Users::findFirstById($userId);
+            if ($approved == 1) {
+                $user->reg_request = 'APPROVED';
+            } else {
+                $user->reg_request = 'DECLINED';
+            }
+
+            if (!$user->update()) {
+                throw new \Exception('Unable to confirm user!');
+            }
         } catch (\PDOException $e) {
             throw new ServiceException($e->getMessage(), $e->getCode(), $e);
         }
