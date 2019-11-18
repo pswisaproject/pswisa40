@@ -166,6 +166,7 @@ class UsersController extends AbstractController
 
             $userId     = $this->request->get('userID');
             $approved   = $this->request->get('approved');
+            $message    = $this->request->getPost('message');
 
             if (!$isAuthorized) {
                 $errors[] =
@@ -178,14 +179,18 @@ class UsersController extends AbstractController
             }
 
             $result = '';
-            UsersService::handleUserRegistration($userId, $approved);
+            $user = Users::findFirstById($userId);
+            $email = $user->email;
+            UsersService::handleUserRegistration($user, $approved);
+            $mailerHelper = new MailerHelper();
             try {
                 if ($approved == 1) {
                     $result = 'registration approved!';
-                    // SEND A MAIL TO THE USER
+                    // SEND A MAIL TO THE USER WITH LINK
                 } else {
                     $result = 'registration denied!';
-                    // SEND A DIFFERENT MAIL TO THE USER
+                    $mailerHelper::sendMail($email, 'Registration denied!', 
+                    'Your registration was denied with the following message: ' . $message);
                 }
                 
             } catch (ServiceException $e) {
@@ -193,7 +198,6 @@ class UsersController extends AbstractController
             }
 
             return ['data' => [], 'message' => 'User ' . $result];
-
         } catch (ServiceException $e) {
             switch ($e->getCode()) {
                 case UsersService::ERROR_UNAUTHORIZED:

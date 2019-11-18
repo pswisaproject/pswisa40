@@ -102,9 +102,8 @@ class UsersService extends AbstractService
         }
     }
 
-    public function handleUserRegistration($userId, $approved) {
+    public function handleUserRegistration($user, $approved) {
         try {
-            $user = Users::findFirstById($userId);
             if ($approved == 1) {
                 $user->reg_request = 'APPROVED';
             } else {
