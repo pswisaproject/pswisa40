@@ -3,11 +3,14 @@
 namespace App\Controllers;
 
 use App\Controllers\HttpExceptions\Http400Exception;
-use App\Helpers\HashTokenHelper;
 use App\Models\Users;
 use App\Services\UsersService;
 use App\Helpers\Validators\RegistrationValidator;
+use App\Helpers\CommonHelpers;
 use App\Helpers\MailerHelper;
+use App\Helpers\HashTokenHelper;
+use App\Helpers\SQLHelper;
+use App\Models\RegistrationLinks;
 
 class UsersController extends AbstractController
 {
@@ -89,17 +92,15 @@ class UsersController extends AbstractController
             if (count($messages)) {
                 foreach ($messages as $message) {
                     $errors[] = [
-                        'code' => $message->getCode(),
+                        'error_code' => $message->getCode(),
                         'message' => $message->getMessage()];
                 }
                 $exception = new Http400Exception(_('Invalid registration parameters'), self::ERROR_BAD_REQUEST);
                 throw $exception->addErrorDetails($errors);
             }
             UsersService::register($id, $firstName, $lastName, $email, $password, 
-                                              $address, $city, $country, $phone);
+                                   $address, $city, $country, $phone);
 
-            $mailerHelper = new MailerHelper();
-            $mailerHelper::sendMail($email, 'Confirm your registration.', 'Please confirm your registration at this link: www.temporary.com');
             return ['data' => [], 'message' => 'User successfully registered!'];
         } catch (\Throwable $th) {
             throw $th;
@@ -109,6 +110,127 @@ class UsersController extends AbstractController
     public function editProfileAction()
     {
        
+    }
+
+    public function getPendingUsersListAction()
+    {
+        $errors = [];
+
+        try {
+            $sqlHelper = new SQLHelper();
+
+            $user      = CommonHelpers::getCurrentUser($this->request);
+            $id        = $user->id;
+
+            $isAuthorized = $sqlHelper->isUserAuthorized($id, 'LIST_PENDING_USERS');
+
+            if (!$isAuthorized) {
+                $errors[] =
+                    [
+                    'invalid_permission' => 'User is not authorized to list pending users!',
+                    'error_code'         => UsersService::ERROR_UNAUTHORIZED
+                ];
+                $exception = new Http401Exception(_('Unauthorized access error'), self::ERROR_INVALID_REQUEST);
+                throw $exception->addErrorDetails($errors);
+            }
+
+            try {
+                $pendingUsersList = $this->usersService->getPendingUsersList();
+            } catch (ServiceException $e) {
+                throw new Http500Exception(_('Internal Server Error'), $e->getCode(), $e);
+            }
+
+            return ['data' => ['pending_users' => $pendingUsersList], 'message' => 'Successfully fetched pending users!'];
+
+        } catch (ServiceException $e) {
+            switch ($e->getCode()) {
+                case UsersService::ERROR_UNAUTHORIZED:
+                    throw new Http401Exception($e->getMessage(), $e->getCode(), $e);
+                default:
+                    throw new Http500Exception(_('Internal Server Error'), $e->getCode(), $e);
+            }
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
+    public function handleUserRegistrationAction() {
+        // ?userID=id&approved=boolean
+        $errors = [];
+        try {
+            $sqlHelper = new SQLHelper();
+            $user      = CommonHelpers::getCurrentUser($this->request);
+            $id        = $user->id;
+            $isAuthorized = $sqlHelper->isUserAuthorized($id, 'HANDLE_USER_REGISTRATION');
+
+            $userId     = $this->request->get('userID');
+            $approved   = $this->request->get('approved');
+            $message    = $this->request->getPost('message');
+
+            if (!$isAuthorized) {
+                $errors[] =
+                    [
+                    'invalid_permission' => 'User is not authorized to handle user registrations!',
+                    'error_code'         => UsersService::ERROR_UNAUTHORIZED
+                ];
+                $exception = new Http401Exception(_('Unauthorized access error'), self::ERROR_INVALID_REQUEST);
+                throw $exception->addErrorDetails($errors);
+            }
+
+            $result = '';
+            $user = Users::findFirstById($userId);
+            $email = $user->email;
+            UsersService::handleUserRegistration($user, $approved);
+            $mailerHelper = new MailerHelper();
+            try {
+                if ($approved == 1) {
+                    $result = 'registration approved!';
+                    $token = HashTokenHelper::generateRegistrationHashToken();
+                    UsersService::createRegistrationLink($userId, $token);
+                    $mailerHelper::sendMail($email, 'Registration confirmation at ISAPSW', 
+                    '<h3>Please confirm your registration by clicking on the following link:<h3>
+                    <a href="api.pswisa40/users/confirmRegistration?token=' . $token . '">LINK</a>');
+                } else {
+                    $result = 'registration denied!';
+                    $mailerHelper::sendMail($email, 'Registration denied at ISAPSW', 
+                    'Your registration was denied with the following message: ' . $message);
+                }
+                
+            } catch (ServiceException $e) {
+                throw new Http500Exception(_('Internal Server Error'), $e->getCode(), $e);
+            }
+
+            return ['data' => [], 'message' => 'User ' . $result];
+        } catch (ServiceException $e) {
+            switch ($e->getCode()) {
+                case UsersService::ERROR_UNAUTHORIZED:
+                    throw new Http401Exception($e->getMessage(), $e->getCode(), $e);
+                default:
+                    throw new Http500Exception(_('Internal Server Error'), $e->getCode(), $e);
+            }
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
+    public function userConfirmationRegistrationAction() {
+        // user/confirmRegistration?token=dfn326wtsdftrua
+        try {
+            $hashToken = $this->request->get('token');
+            $userId = RegistrationLinks::findFirstByToken($hashToken)->user_id;
+            $user = Users::findFirstById($userId);  
+
+            if ($user !== null && $user->reg_request == 'APPROVED') {
+                UsersService::userConfirmationRegistration($user);
+                echo 'You have successfully confirmed your registration!';
+            } else {
+                echo 'ERROR 404: ';
+                throw new \Exception('Invalid URL.');
+            }
+            
+        } catch (\Throwable $th) {
+            throw $th;
+        }
     }
 
     public function testGetAction() {

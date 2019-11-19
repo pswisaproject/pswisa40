@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\RegistrationLinks;
 use App\Models\Users;
 use App\Models\UserSession;
 
@@ -27,10 +28,11 @@ class UsersService extends AbstractService
     const ERROR_INVALID_USER_CREDENTIALS = 11001;
     const ERROR_USER_NOT_ACTIVE = 11002;
     const ERROR_USER_NOT_VERIFIED = 11003;
+    const ERROR_UNAUTHORIZED = 11004;
 
     /* --------------- USER SERVICE FUNCTIONS --------------- */
     
-    public function getUserList()
+    public function getUsersList()
     {
 
     }
@@ -69,7 +71,7 @@ class UsersService extends AbstractService
             $usersModel->city = $city;
             $usersModel->country = $country;
             $usersModel->phone = $phone;
-            $usersModel->active = 0;
+            $usersModel->active = 1;
             $usersModel->verified = 0;
             $usersModel->created_at = date("Y-m-d H:i:s");
             $usersModel->updated_at = date("Y-m-d H:i:s");
@@ -85,5 +87,66 @@ class UsersService extends AbstractService
     public function editProfile()
     {
       
+    }
+
+    public function getPendingUsersList() {
+        try {
+            $pendingUsers = Users::findByRegRequest('PENDING');
+
+            if (!$pendingUsers) {
+                return [];
+            }
+
+            return $pendingUsers->toArray();
+        } catch (\PDOException $e) {
+            throw new ServiceException($e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    public function handleUserRegistration($user, $approved) {
+        try {
+            if ($approved == 1) {
+                $user->reg_request = 'APPROVED';
+            } else {
+                $user->reg_request = 'DECLINED';
+            }
+
+            if (!$user->update()) {
+                throw new \Exception('Unable to confirm user!');
+            }
+        } catch (\PDOException $e) {
+            throw new ServiceException($e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    public function createRegistrationLink($userId, $token) {
+        try {
+            $registrationLink = new RegistrationLinks();
+            $registrationLink->user_id = $userId;
+            $registrationLink->token = $token;
+            $registrationLink->active = 1;
+            $registrationLink->created_at = date("Y-m-d H:i:s");
+            $registrationLink->updated_at = date("Y-m-d H:i:s");
+            $registrationLink->expire_at = date("Y-m-d H:i:s", strtotime("+1 month", time()));
+
+
+            if (!$registrationLink->create()) {
+                throw new \Exception('Unable to create registration link!');
+            }
+        } catch (\PDOException $e) {
+            throw new ServiceException($e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    public function userConfirmationRegistration($user) {
+        try {
+            $user->verified = 1;
+
+            if (!$user->update()) {
+                throw new \Exception('Unable to confirm user!');
+            }
+        } catch (\PDOException $e) {
+            throw new ServiceException($e->getMessage(), $e->getCode(), $e);
+        }
     }
 }
