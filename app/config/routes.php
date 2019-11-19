@@ -6,7 +6,7 @@ use Phalcon\Mvc\Micro\Collection;
 
 $usersCollection = new Collection();
 $usersCollection->setHandler('\App\Controllers\UsersController', true);
-$usersCollection->setPrefix('/user');
+$usersCollection->setPrefix('/users');
 
 $usersCollection->post('/login', 'loginAction');
 $usersCollection->post('/register', 'registerAction');
@@ -14,6 +14,7 @@ $usersCollection->post('/handleUserRegister', 'handleUserRegistrationAction');
 $usersCollection->put('/editProfile', 'editProfileAction');
 $usersCollection->get('/list', 'getUsersListAction');
 $usersCollection->get('/listPending', 'getPendingUsersListAction');
+$usersCollection->get('/confirmRegistration', 'userConfirmationRegistrationAction');
 
 // tests
 $usersCollection->get('/getTest', 'testGetAction');

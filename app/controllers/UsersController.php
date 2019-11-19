@@ -10,6 +10,7 @@ use App\Helpers\CommonHelpers;
 use App\Helpers\MailerHelper;
 use App\Helpers\HashTokenHelper;
 use App\Helpers\SQLHelper;
+use App\Models\RegistrationLinks;
 
 class UsersController extends AbstractController
 {
@@ -98,10 +99,8 @@ class UsersController extends AbstractController
                 throw $exception->addErrorDetails($errors);
             }
             UsersService::register($id, $firstName, $lastName, $email, $password, 
-                                              $address, $city, $country, $phone);
+                                   $address, $city, $country, $phone);
 
-            $mailerHelper = new MailerHelper();
-            $mailerHelper::sendMail($email, 'Confirm your registration.', 'Please confirm your registration at this link: www.temporary.com');
             return ['data' => [], 'message' => 'User successfully registered!'];
         } catch (\Throwable $th) {
             throw $th;
@@ -186,11 +185,14 @@ class UsersController extends AbstractController
             try {
                 if ($approved == 1) {
                     $result = 'registration approved!';
-                    $link = HashTokenHelper::generateRegistrationHashToken();
-                    // SEND A MAIL TO THE USER WITH LINK ?confirm=hash
+                    $token = HashTokenHelper::generateRegistrationHashToken();
+                    UsersService::createRegistrationLink($userId, $token);
+                    $mailerHelper::sendMail($email, 'Registration confirmation at ISAPSW', 
+                    '<h3>Please confirm your registration by clicking on the following link:<h3>
+                    <a href="api.pswisa40/users/confirmRegistration?token=' . $token . '">LINK</a>');
                 } else {
                     $result = 'registration denied!';
-                    $mailerHelper::sendMail($email, 'Registration denied!', 
+                    $mailerHelper::sendMail($email, 'Registration denied at ISAPSW', 
                     'Your registration was denied with the following message: ' . $message);
                 }
                 
@@ -206,6 +208,26 @@ class UsersController extends AbstractController
                 default:
                     throw new Http500Exception(_('Internal Server Error'), $e->getCode(), $e);
             }
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
+    public function userConfirmationRegistrationAction() {
+        // user/confirmRegistration?token=dfn326wtsdftrua
+        try {
+            $hashToken = $this->request->get('token');
+            $userId = RegistrationLinks::findFirstByToken($hashToken)->user_id;
+            $user = Users::findFirstById($userId);  
+
+            if ($user !== null && $user->reg_request == 'APPROVED') {
+                UsersService::userConfirmationRegistration($user);
+                echo 'You have successfully confirmed your registration!';
+            } else {
+                echo 'ERROR 404: ';
+                throw new \Exception('Invalid URL.');
+            }
+            
         } catch (\Throwable $th) {
             throw $th;
         }

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\RegistrationLinks;
 use App\Models\Users;
 use App\Models\UserSession;
 
@@ -70,7 +71,7 @@ class UsersService extends AbstractService
             $usersModel->city = $city;
             $usersModel->country = $country;
             $usersModel->phone = $phone;
-            $usersModel->active = 0;
+            $usersModel->active = 1;
             $usersModel->verified = 0;
             $usersModel->created_at = date("Y-m-d H:i:s");
             $usersModel->updated_at = date("Y-m-d H:i:s");
@@ -118,7 +119,34 @@ class UsersService extends AbstractService
         }
     }
 
-    public function generateRegistrationLink() {
-        
+    public function createRegistrationLink($userId, $token) {
+        try {
+            $registrationLink = new RegistrationLinks();
+            $registrationLink->user_id = $userId;
+            $registrationLink->token = $token;
+            $registrationLink->active = 1;
+            $registrationLink->created_at = date("Y-m-d H:i:s");
+            $registrationLink->updated_at = date("Y-m-d H:i:s");
+            $registrationLink->expire_at = date("Y-m-d H:i:s", strtotime("+1 month", time()));
+
+
+            if (!$registrationLink->create()) {
+                throw new \Exception('Unable to create registration link!');
+            }
+        } catch (\PDOException $e) {
+            throw new ServiceException($e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    public function userConfirmationRegistration($user) {
+        try {
+            $user->verified = 1;
+
+            if (!$user->update()) {
+                throw new \Exception('Unable to confirm user!');
+            }
+        } catch (\PDOException $e) {
+            throw new ServiceException($e->getMessage(), $e->getCode(), $e);
+        }
     }
 }
