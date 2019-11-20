@@ -19,6 +19,8 @@ class Users extends \Phalcon\Mvc\Model
     protected $country;
     protected $phone;
     protected $active;
+    protected $verified;
+    protected $changedPassword;
     protected $reg_request;
     protected $note;
     protected $created_at;
@@ -42,6 +44,26 @@ class Users extends \Phalcon\Mvc\Model
     public function setId($id)
     {
         $this->id = $id;
+    }
+
+    public function getChangedPassword()
+    {
+        return $this->changedPassword;
+    }
+
+    public function setChangedPassword($changedPassword)
+    {
+        $this->changedPassword = $changedPassword;
+    }
+
+    public function getVerified()
+    {
+        return $this->verified;
+    }
+
+    public function setVerified($verified)
+    {
+        $this->verified = $verified;
     }
     
     public function getFirstName()
