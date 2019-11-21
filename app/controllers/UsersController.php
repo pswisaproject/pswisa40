@@ -27,6 +27,7 @@ class UsersController extends AbstractController
             $userId         = $user->id;
             $isUserVerified = $user->verified;
             $isUserActive   = $user->active;
+            $changedPassword = $user->changedPassword;
             
             if ($email == $user->email && $isUserVerified == 0) {
                 $errors[] =
@@ -58,7 +59,7 @@ class UsersController extends AbstractController
             }
 
             UsersService::login($userId, $hashToken);
-            return ['data' => [], 'message' => 'User successfully logged in!'];
+            return ['data' => ['changedPassword' =>$changedPassword], 'message' => 'User successfully logged in!'];
 
         } catch (ServiceException $e) {
             switch ($e->getCode()) {
