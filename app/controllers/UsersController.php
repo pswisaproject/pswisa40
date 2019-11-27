@@ -108,6 +108,29 @@ class UsersController extends AbstractController
         }
     }
 
+    public function getUserInfoAction() {
+        try {
+            $user      = CommonHelpers::getCurrentUser($this->request);
+            if (!$user) {
+                throw new \Exception('User does not exist!');
+            }
+            return ['data' => 
+            [
+                'healthcare_id' => $user->id,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'email' => $user->email,
+                'address' => $user->address,
+                'city' => $user->city,
+                'country' => $user->country,
+                'phone' => $user->phone
+            ], 'message' => 'Successfully fetched user info!'];
+
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
     public function editProfileAction()
     {
        
