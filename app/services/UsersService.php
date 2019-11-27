@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\IllnessRecords;
 use App\Models\RegistrationLinks;
 use App\Models\Users;
 use App\Models\UserSession;
@@ -145,6 +146,24 @@ class UsersService extends AbstractService
             if (!$user->update()) {
                 throw new \Exception('Unable to confirm user!');
             }
+        } catch (\PDOException $e) {
+            throw new ServiceException($e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    public function getPatientDiagnosisList($patientId) {
+        try {
+            $patientIllnessRecordsList = IllnessRecords::findByPatientId($patientId);
+            if (!$patientIllnessRecordsList) {
+                return [];
+            }
+
+            $patientDiagnosisList = [];
+            foreach ($patientIllnessRecordsList as $diagnosis) {
+                $patientDiagnosisList[] = $diagnosis->diagnosis_id;
+            }
+
+            return $patientDiagnosisList;
         } catch (\PDOException $e) {
             throw new ServiceException($e->getMessage(), $e->getCode(), $e);
         }

@@ -11,6 +11,7 @@ use App\Helpers\MailerHelper;
 use App\Helpers\HashTokenHelper;
 use App\Helpers\SQLHelper;
 use App\Models\RegistrationLinks;
+use App\Models\Diagnosis;
 
 class UsersController extends AbstractController
 {
@@ -126,6 +127,29 @@ class UsersController extends AbstractController
                 'phone' => $user->phone
             ], 'message' => 'Successfully fetched user info!'];
 
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
+    public function getUserMedicalRecordsAction() {
+        try {
+            $user      = CommonHelpers::getCurrentUser($this->request);
+            if (!$user) {
+                throw new \Exception('User does not exist!');
+            }
+
+            $patientId = $user->id;
+            $patientDiagnosisList = UsersService::getPatientDiagnosisList($patientId);
+
+            $diagnosisNames = [];
+            for ($i = 0; $i < count($patientDiagnosisList); $i++) {
+                $name = Diagnosis::findFirstById($patientDiagnosisList[$i])->name;
+                $diagnosisNames[] = $name;
+            }
+
+            return ['data' => ['diagnosis_names' => $diagnosisNames], 
+                    'message' => 'Successfully fetched user medical records!'];
         } catch (\Throwable $th) {
             throw $th;
         }
