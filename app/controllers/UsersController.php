@@ -59,7 +59,7 @@ class UsersController extends AbstractController
             }
 
             UsersService::login($userId, $hashToken);
-            return ['data' => ['changedPassword' =>$changedPassword], 'message' => 'User successfully logged in!'];
+            return ['data' => ['Ht' => $hashToken, 'changedPassword' => $changedPassword], 'message' => 'User successfully logged in!'];
 
         } catch (ServiceException $e) {
             switch ($e->getCode()) {
