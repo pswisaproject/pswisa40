@@ -9,7 +9,7 @@ class CommonHelpers
 {
     public function getCurrentUser($request)
     {
-        $hashToken = $request->getHeader('hash');
+        $hashToken = $request->getHeader('Ht');
         $currentUserId = UserSession::findFirstByToken($hashToken)->user_id;
         return Users::findFirstById($currentUserId);
     }

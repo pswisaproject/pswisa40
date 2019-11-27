@@ -15,6 +15,7 @@ $usersCollection->put('/editProfile', 'editProfileAction');
 $usersCollection->get('/list', 'getUsersListAction');
 $usersCollection->get('/listPending', 'getPendingUsersListAction');
 $usersCollection->get('/confirmRegistration', 'userConfirmationRegistrationAction');
+$usersCollection->get('/getUserInfo', 'getUserInfoAction');
 
 // tests
 $usersCollection->get('/getTest', 'testGetAction');
