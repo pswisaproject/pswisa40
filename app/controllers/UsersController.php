@@ -157,7 +157,22 @@ class UsersController extends AbstractController
 
     public function editProfileAction()
     {
-       
+        print_r('mama gakala');
+        die();
+        try {
+            // $sqlHelper = new SQLHelper();
+
+            // $user = CommonHelpers::getCurrentUser($this->request);
+            // if (!$user) {
+            //     throw new \Exception('User does not exist!');
+            // }
+            // $putparams = $this->request->getPut();
+            return ['data' => ['neka data' => 'nesto data'], 
+            'message' => 'jako dobra data!'];
+        }
+        catch (\Throwable $th) {
+            throw $th;
+        }
     }
 
     public function getPendingUsersListAction()
