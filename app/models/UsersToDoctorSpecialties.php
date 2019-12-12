@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
-class UsersToDoctorSpecialty extends \Phalcon\Mvc\Model
+class UsersToDoctorSpecialties extends \Phalcon\Mvc\Model
 {
     public function initialize()
     {
-        $this->setSource('users_2_doctor_specialty');
+        $this->setSource('users_2_doctor_specialties');
 
     }
 

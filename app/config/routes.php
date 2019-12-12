@@ -12,6 +12,9 @@ $usersCollection->setPrefix('/users');
 $usersCollection->post('/login', 'loginAction');
 $usersCollection->post('/register', 'registerAction');
 $usersCollection->post('/handleUserRegister', 'handleUserRegistrationAction');
+$usersCollection->post('/searchClinics', 'searchClinicsAction');
+
+// user collection PUT 
 $usersCollection->put('/editProfile', 'editProfileAction');
 
 // user collection GET

@@ -12,6 +12,9 @@ use App\Helpers\HashTokenHelper;
 use App\Helpers\SQLHelper;
 use App\Models\RegistrationLinks;
 use App\Models\Diagnosis;
+use App\Models\UsersToDoctorSpecialties;
+use App\Models\DoctorSpecialties;
+use App\Models\DoctorRatings;
 
 class UsersController extends AbstractController
 {
@@ -276,6 +279,69 @@ class UsersController extends AbstractController
                 throw new \Exception('Invalid URL.');
             }
             
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
+    public function searchClinicsAction() {
+        // ?date=2015-02-04T05%3A10%3A58%2B05%3A30&type=ONCOLOGY
+        // &country=...&city=...
+        // &rating=3
+        $errors = [];
+        try {
+            // exact address is not needed
+            $date =     $this->request->get('date'); // this date needs to be handled!
+            $type =     $this->request->get('type');
+            $country =  $this->request->get('country');
+            $city =     $this->request->get('city');
+            $rating =   $this->request->get('rating');
+
+            // MODELS
+            $sqlHelper = new SQLHelper();
+            $usersModel = new Users();
+            $usersToDoctorSpecialty = new UsersToDoctorSpecialties();
+            $doctorSpecialtiesModel = new DoctorSpecialties();
+            $doctorRatings = new DoctorRatings();
+
+            // FIND BY TYPE
+            $specialtyId = $doctorSpecialtiesModel::findFirstBySpecialty($type)->id;
+            $doctorsWithSpecialty = $usersToDoctorSpecialty::findBySpecialtyId($specialtyId);
+            $doctorsWithSpecialties = $doctorsWithSpecialty->toArray();
+
+            // FIND BY RATING
+            if ($rating != null) {
+                $searchByRatings = "SELECT DISTINCT DR.doctor_id FROM App\Models\DoctorRatings DR GROUP BY DR.doctor_id HAVING AVG(DR.rating)>=$rating";
+                $ratingResults = $sqlHelper->createAndExecuteQuery($searchByRatings)->toArray();
+                $ratingResultIds = [];
+
+                foreach ($ratingResults as $ratingResult) {
+                    $ratingResultIds[] = $ratingResult['doctor_id'];
+                }
+
+                $doctorsWithOkRatings = [];
+                foreach ($doctorsWithSpecialties as $doctor) {
+                    if (in_array($doctor['doctor_id'], $ratingResultIds)) {
+                        $doctorsWithOkRatings[] = $doctor;
+                    }
+                }
+            }
+            
+            print_r($doctorsWithOkRatings);
+            die();
+
+            // ABOVE WORKS
+            // FIND DOCTORS WITH THE SPECIFIED TYPE
+
+
+            return ['data' => [], 'message' => 'Successfully fetched search results'];
+        } catch (ServiceException $e) {
+            switch ($e->getCode()) {
+                case UsersService::ERROR_UNAUTHORIZED:
+                    throw new Http401Exception($e->getMessage(), $e->getCode(), $e);
+                default:
+                    throw new Http500Exception(_('Internal Server Error'), $e->getCode(), $e);
+            }
         } catch (\Throwable $th) {
             throw $th;
         }

@@ -7,7 +7,6 @@ class DoctorSpecialties extends \Phalcon\Mvc\Model
     public function initialize()
     {
         $this->setSource('doctor_specialties');
-
     }
 
     protected $id;
