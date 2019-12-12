@@ -331,7 +331,8 @@ class UsersController extends AbstractController
             die();
 
             // ABOVE WORKS
-            // FIND DOCTORS WITH THE SPECIFIED TYPE
+            
+            // DOCTORS BY AVAILABLE TIME
 
 
             return ['data' => [], 'message' => 'Successfully fetched search results'];
