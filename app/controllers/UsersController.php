@@ -15,6 +15,7 @@ use App\Models\Diagnosis;
 use App\Models\UsersToDoctorSpecialties;
 use App\Models\DoctorSpecialties;
 use App\Models\DoctorRatings;
+use App\Models\Vacations;
 
 class UsersController extends AbstractController
 {
@@ -302,7 +303,8 @@ class UsersController extends AbstractController
             $usersModel = new Users();
             $usersToDoctorSpecialty = new UsersToDoctorSpecialties();
             $doctorSpecialtiesModel = new DoctorSpecialties();
-            $doctorRatings = new DoctorRatings();
+            $doctorRatingsModel = new DoctorRatings();
+            $vacationsmodel = new Vacations();
 
             // FIND BY TYPE
             $specialtyId = $doctorSpecialtiesModel::findFirstBySpecialty($type)->id;
@@ -327,13 +329,27 @@ class UsersController extends AbstractController
                 }
             }
             
-            print_r($doctorsWithOkRatings);
+            // DOCTORS NOT ON VACATION
+            $doctorsNotOnVacation = [];
+            foreach ($doctorsWithOkRatings as $doctor) {
+                $doctorVacations = Vacations::findByUsersId($doctor['doctor_id'])->toArray();
+                $doctorId = $doctorVacations[0]['users_id'];
+                $isOnVacation = false;
+                foreach ($doctorVacations as $vacation) {
+                    if (CommonHelpers::check_in_range($vacation['start_date'], $vacation['end_date'], $date)) {
+                        $isOnVacation = true;
+                        break;
+                    }
+                }
+                // ...leaving this as is for the memes.
+                if ($isOnVacation) { continue; }
+                $doctorsNotOnVacation[] = $doctorId;
+            }
+            print_r($doctorsNotOnVacation);
             die();
 
             // ABOVE WORKS
-            
             // DOCTORS BY AVAILABLE TIME
-
 
             return ['data' => [], 'message' => 'Successfully fetched search results'];
         } catch (ServiceException $e) {
