@@ -6,7 +6,7 @@ class ClinicsAppointmentSlots extends \Phalcon\Mvc\Model
 {
     public function initialize()
     {
-        $this->setSource('clinics');
+        $this->setSource('clinics_appointment_slots');
 
     }
 

@@ -16,6 +16,7 @@ use App\Models\UsersToDoctorSpecialties;
 use App\Models\DoctorSpecialties;
 use App\Models\DoctorRatings;
 use App\Models\Vacations;
+use App\Models\ClinicsAppointmentSlots;
 
 class UsersController extends AbstractController
 {
@@ -285,6 +286,7 @@ class UsersController extends AbstractController
         }
     }
 
+    // data is the end result of the search and it gets changed after each point
     public function searchClinicsAction() {
         // ?date=2015-02-04T05%3A10%3A58%2B05%3A30&type=ONCOLOGY
         // &country=...&city=...
@@ -298,6 +300,9 @@ class UsersController extends AbstractController
             $city =     $this->request->get('city');
             $rating =   $this->request->get('rating');
 
+            // PARSE THE DATE INTO NEEDED FORM
+            $date = str_replace("+", " ", $date);
+
             // MODELS
             $sqlHelper = new SQLHelper();
             $usersModel = new Users();
@@ -305,13 +310,14 @@ class UsersController extends AbstractController
             $doctorSpecialtiesModel = new DoctorSpecialties();
             $doctorRatingsModel = new DoctorRatings();
             $vacationsmodel = new Vacations();
+            $clinicsAppointmentSlotsModel = new ClinicsAppointmentSlots();
 
             // FIND BY TYPE
             $specialtyId = $doctorSpecialtiesModel::findFirstBySpecialty($type)->id;
             $doctorsWithSpecialty = $usersToDoctorSpecialty::findBySpecialtyId($specialtyId);
-            $doctorsWithSpecialties = $doctorsWithSpecialty->toArray();
+            $data = $doctorsWithSpecialty->toArray();
 
-            // FIND BY RATING
+            // FIND BY RATING - OPTIONAL
             if ($rating != null) {
                 $searchByRatings = "SELECT DISTINCT DR.doctor_id FROM App\Models\DoctorRatings DR GROUP BY DR.doctor_id HAVING AVG(DR.rating)>=$rating";
                 $ratingResults = $sqlHelper->createAndExecuteQuery($searchByRatings)->toArray();
@@ -322,16 +328,17 @@ class UsersController extends AbstractController
                 }
 
                 $doctorsWithOkRatings = [];
-                foreach ($doctorsWithSpecialties as $doctor) {
+                foreach ($data as $doctor) {
                     if (in_array($doctor['doctor_id'], $ratingResultIds)) {
                         $doctorsWithOkRatings[] = $doctor;
                     }
                 }
+                $data = $doctorsWithOkRatings;
             }
             
             // DOCTORS NOT ON VACATION
             $doctorsNotOnVacation = [];
-            foreach ($doctorsWithOkRatings as $doctor) {
+            foreach ($data as $doctor) {
                 $doctorVacations = Vacations::findByUsersId($doctor['doctor_id'])->toArray();
                 $doctorId = $doctorVacations[0]['users_id'];
                 $isOnVacation = false;
@@ -345,13 +352,59 @@ class UsersController extends AbstractController
                 if ($isOnVacation) { continue; }
                 $doctorsNotOnVacation[] = $doctorId;
             }
-            print_r($doctorsNotOnVacation);
-            die();
 
-            // ABOVE WORKS
+            $data = $doctorsNotOnVacation;
+
             // DOCTORS BY AVAILABLE TIME
+            // LET'S SAY THE APPOINTMENT LASTS FOR 1h, SO THIS ONLY LISTS APPOINTMENTS
+            // WHERE THERE'S AT LEAST AN HOUR FREE
 
-            return ['data' => [], 'message' => 'Successfully fetched search results'];
+            // I HAVE NO CLUE WHAT I WROTE HERE... JESUS
+            $availableDoctors = [];
+            foreach ($data as $doctor) {
+                $doctorsAppointments = $clinicsAppointmentSlotsModel::findByDoctorId($doctor)->toArray();
+                $isAvailable = true; // BY DEFAULT, THE DOCTOR IS AVAILABLE
+                foreach ($doctorsAppointments as $appointment) {
+
+                    // IF THE SELECTED DATE IS BETWEEN APPOINTMENTS
+                    // THEN EXIT IMMEDIATELY, THE DOCTOR IS NOT AVAILABLE
+                    if (CommonHelpers::check_in_range($appointment['start_date'], $appointment['end_date'], $date)) {
+                        $isAvailable = false; 
+                        break; 
+                    }
+
+                    // IF THE SELECTED DATE IS BIGGER THAN THE START DATE, DON'T LOOK FOR RESULTS
+                    if (strtotime($date) <= strtotime($appointment['start_date'])) {
+                        // FINALLY, CHECK IF THERE'S AN HOUR BETWEEN THE SELECTED DATE AND ALL APPOINTMENTS
+                        if (strtotime($appointment['start_date']) - strtotime($date) >= 3600) {
+                            continue;
+                        // IF THERE'S NOT, THE DOCTOR IS NOT AVAILABLE
+                        } else {
+                            $isAvailable = false; 
+                            break;
+                        }
+                    } else {
+                        continue;
+                    }
+                }
+                if ($isAvailable) {
+                    $availableDoctors[] = $doctor;
+                }
+            }
+
+            $data = $availableDoctors;
+            // ABOVE WORKS
+
+            // FIND BY LOCATION - OPTIONAL
+            if ($country != null) {
+
+            }
+
+            if ($city != null) {
+
+            }
+
+            return ['data' => [$data], 'message' => 'Successfully fetched search results'];
         } catch (ServiceException $e) {
             switch ($e->getCode()) {
                 case UsersService::ERROR_UNAUTHORIZED:
