@@ -29,7 +29,7 @@ class ClinicsAppointmentSlots extends \Phalcon\Mvc\Model
 
     public static function findFirst($parameters = null)
     {
-        return parent::findFirst($clinics_prices_idparameters);
+        return parent::findFirst($parameters);
     }
 
     public function getId()

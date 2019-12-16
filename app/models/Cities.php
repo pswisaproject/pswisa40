@@ -2,21 +2,17 @@
 
 namespace App\Models;
 
-class Clinics extends \Phalcon\Mvc\Model
+class Cities extends \Phalcon\Mvc\Model
 {
     public function initialize()
     {
-        $this->setSource('clinics');
+        $this->setSource('cities');
 
     }
 
     protected $id;
-    protected $clinic_center_id;
-    protected $name;
-    protected $address;
-    protected $city_id;
     protected $country_id;
-    protected $description;
+    protected $city;
     protected $created_at;
     protected $updated_at;
 
@@ -40,46 +36,6 @@ class Clinics extends \Phalcon\Mvc\Model
         $this->id = $id;
     }
 
-    public function getClinicCenterId()
-    {
-        return $this->clinic_center_id;
-    }
-
-    public function setClinicCenterId($clinic_center_id)
-    {
-        $this->clinic_center_id = $clinic_center_id;
-    }
-
-    public function getName()
-    {
-        return $this->name;
-    }
-
-    public function setName($name)
-    {
-        $this->name = $name;
-    }
-
-    public function getAddress()
-    {
-        return $this->address;
-    }
-
-    public function setAddress($address)
-    {
-        $this->address = $address;
-    }
-
-    public function getCityId()
-    {
-        return $this->city_id;
-    }
-
-    public function setCityId($city_id)
-    {
-        $this->city_id = $city_id;
-    }
-
     public function getCountryId()
     {
         return $this->country_id;
@@ -90,14 +46,14 @@ class Clinics extends \Phalcon\Mvc\Model
         $this->country_id = $country_id;
     }
 
-    public function getDescription()
+    public function getCity()
     {
-        return $this->description;
+        return $this->city;
     }
 
-    public function setDescription($Description)
+    public function setCity($city)
     {
-        $this->description = $description;
+        $this->city = $city;
     }
 
     public function getCreatedAt()
