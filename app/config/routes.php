@@ -23,6 +23,7 @@ $usersCollection->get('/listPending', 'getPendingUsersListAction');
 $usersCollection->get('/confirmRegistration', 'userConfirmationRegistrationAction');
 $usersCollection->get('/getUserInfo', 'getUserInfoAction');
 $usersCollection->get('/getUserMedicalRecords', 'getUserMedicalRecordsAction');
+$usersCollection->get('/getClinics', 'getClinicsAction');
 
 // tests
 $usersCollection->get('/getTest', 'testGetAction');
