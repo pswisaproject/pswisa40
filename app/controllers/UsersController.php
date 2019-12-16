@@ -17,6 +17,7 @@ use App\Models\DoctorSpecialties;
 use App\Models\DoctorRatings;
 use App\Models\Vacations;
 use App\Models\Clinics;
+use App\Models\ClinicsPrices;
 use App\Models\ClinicsAppointmentSlots;
 use App\Models\Countries;
 use App\Models\Cities;
@@ -388,29 +389,29 @@ class UsersController extends AbstractController
             $isAvailable = true; // BY DEFAULT, THE DOCTOR IS AVAILABLE
             foreach ($doctorsAppointments as $appointment) {
 
-            // IF THE SELECTED DATE IS BETWEEN APPOINTMENTS
-            // THEN EXIT IMMEDIATELY, THE DOCTOR IS NOT AVAILABLE
-            if (CommonHelpers::check_in_range($appointment['start_date'], $appointment['end_date'], $date)) {
-                $isAvailable = false; 
-                break; 
-            }
+                // IF THE SELECTED DATE IS BETWEEN APPOINTMENTS
+                // THEN EXIT IMMEDIATELY, THE DOCTOR IS NOT AVAILABLE
+                if (CommonHelpers::check_in_range($appointment['start_date'], $appointment['end_date'], $date)) {
+                    $isAvailable = false; 
+                    break; 
+                }
 
             // IF THE SELECTED DATE IS BIGGER THAN THE START DATE, DON'T LOOK FOR RESULTS
-            if (strtotime($date) <= strtotime($appointment['start_date'])) {
-                // FINALLY, CHECK IF THERE'S AN HOUR BETWEEN THE SELECTED DATE AND ALL APPOINTMENTS
-                if (strtotime($appointment['start_date']) - strtotime($date) >= 3600) {
-                continue;
-                // IF THERE'S NOT, THE DOCTOR IS NOT AVAILABLE
+                if (strtotime($date) <= strtotime($appointment['start_date'])) {
+                    // FINALLY, CHECK IF THERE'S AN HOUR BETWEEN THE SELECTED DATE AND ALL APPOINTMENTS
+                    if (strtotime($appointment['start_date']) - strtotime($date) >= 3600) {
+                    continue;
+                    // IF THERE'S NOT, THE DOCTOR IS NOT AVAILABLE
+                    } else {
+                    $isAvailable = false; 
+                    break;
+                    }
                 } else {
-                $isAvailable = false; 
-                break;
+                    continue;
                 }
-            } else {
-                continue;
-            }
             }
             if ($isAvailable) {
-            $availableDoctors[] = $doctor;
+                $availableDoctors[] = $doctor;
             }
         }
 
@@ -431,7 +432,6 @@ class UsersController extends AbstractController
                     $availableByCountry[] = $doctorId;
                 }
             }
-
             $data = $availableByCountry;
         }
 
@@ -445,18 +445,42 @@ class UsersController extends AbstractController
                     $availableByCity[] = $doctorId;
                 }
             }
-
             $data = $availableByCity;
         }
 
         // PREPARE DATA
-        // Za svaku stavku rezultata prikazani su naziv klinike, prosečna ocena klinike, 
-        // adresa klinike i cena pregleda
+        // LIST OF TIMES NEEDS TO BE SHOWN
+        $doctorsData = [];
+        $clinicsData = [];
+        foreach ($data as $doctorId) {
+            $name = Users::findFirstById($doctorId)->first_name;
+            $surname = Users::findFirstById($doctorId)->last_name;
+            $avgDoctorRatingQuery = "SELECT DISTINCT AVG(DR.rating) FROM App\Models\DoctorRatings DR WHERE DR.doctor_id=$doctorId";
+            $avgDoctorRating = $sqlHelper->createAndExecuteQuery($avgDoctorRatingQuery)->toArray()[0]->toArray()[0];
+            $doctorsData = [
+               'name' =>  $name,
+               'surname' => $surname,
+               'rating' => round($avgDoctorRating, 2)
+            ];
 
-        // Za svakog lekara prikazano je njegovo ime i prezime, prosečna ocena i lista vremena kada
-        // pacijent može da zakaže pregled za taj dan.
+            $clinicId = $clinicsAppointmentSlotsModel->findFirstByDoctorId($doctorId)->clinics_id;
+            $clinicName = $clinicsModel::findFirstById($clinicId)->name;
+            $clinicAddress = $clinicsModel::findFirstById($clinicId)->address;
+            $clinicCheckup = ClinicsPrices::findFirstByClinicsId($clinicId)->checkup_price;
+            $clinicOperation = ClinicsPrices::findFirstByClinicsId($clinicId)->operation_price;
+            $avgClinicRatingQuery = "SELECT DISTINCT AVG(CR.rating) FROM App\Models\ClinicRatings CR WHERE CR.clinic_id=$clinicId";
+            $avgClinicRating = $sqlHelper->createAndExecuteQuery($avgClinicRatingQuery)->toArray()[0]->toArray()[0];
 
-        return ['data' => [$data], 'message' => 'Successfully fetched search results'];
+            $clinicsData = [
+                'name' =>  $clinicName,
+                'address' => $clinicAddress,
+                'checkup_price' => $clinicCheckup,
+                'operation_price' => $clinicOperation,
+                'rating' => round($avgClinicRating, 2)
+            ];
+        }
+
+        return ['data' => ['doctors_data' => $doctorsData, 'clinics_data' => $clinicsData], 'message' => 'Successfully fetched search results'];
   } catch (ServiceException $e) {
       switch ($e->getCode()) {
           case UsersService::ERROR_UNAUTHORIZED:
