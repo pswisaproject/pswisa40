@@ -457,7 +457,7 @@ class UsersController extends AbstractController
             $surname = Users::findFirstById($doctorId)->last_name;
             $avgDoctorRatingQuery = "SELECT DISTINCT AVG(DR.rating) FROM App\Models\DoctorRatings DR WHERE DR.doctor_id=$doctorId";
             $avgDoctorRating = $sqlHelper->createAndExecuteQuery($avgDoctorRatingQuery)->toArray()[0]->toArray()[0];
-            $doctorsData = [
+            $doctorsData[] = [
                'name' =>  $name,
                'surname' => $surname,
                'rating' => round($avgDoctorRating, 2)
@@ -471,16 +471,17 @@ class UsersController extends AbstractController
             $avgClinicRatingQuery = "SELECT DISTINCT AVG(CR.rating) FROM App\Models\ClinicRatings CR WHERE CR.clinic_id=$clinicId";
             $avgClinicRating = $sqlHelper->createAndExecuteQuery($avgClinicRatingQuery)->toArray()[0]->toArray()[0];
 
-            $clinicsData = [
+            $clinicsData[] = [
                 'name' =>  $clinicName,
                 'address' => $clinicAddress,
                 'checkup_price' => $clinicCheckup,
                 'operation_price' => $clinicOperation,
-                'rating' => round($avgClinicRating, 2)
+                'rating' => round($avgClinicRating, 2),
+                'doctors_data' => $doctorsData
             ];
         }
 
-        return ['data' => ['doctors_data' => $doctorsData, 'clinics_data' => $clinicsData], 'message' => 'Successfully fetched search results'];
+        return ['data' => ['clinics_data' => $clinicsData], 'message' => 'Successfully fetched search results'];
   } catch (ServiceException $e) {
       switch ($e->getCode()) {
           case UsersService::ERROR_UNAUTHORIZED:
