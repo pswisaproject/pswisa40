@@ -308,15 +308,17 @@ class UsersController extends AbstractController
     }
   }
 
-  // data is the end result of the search and it gets changed after each point
+  // This function could've been written easier but time is of the essence.
   public function searchClinicsAction() {
         // ?date=2015-02-04T05%3A10%3A58%2B05%3A30&type=ONCOLOGY
         // &country=...&city=...
         // &rating=3
+
         $errors = [];
+        $sqlHelper = new SQLHelper();
         try {
         // exact address is not needed
-        $date =     $this->request->get('date'); // this date needs to be handled!
+        $date =     $this->request->get('date');
         $type =     $this->request->get('type');
         $country =  $this->request->get('country');
         $city =     $this->request->get('city');
@@ -325,8 +327,14 @@ class UsersController extends AbstractController
         // PARSE THE DATE INTO NEEDED FORM
         $date = str_replace("+", " ", $date);
 
+        // TODO: Write the query
+        if ($date == null && $type == null && $country == null && $city == null && $rating == null) {
+            $query = 'SELECT * from App\Models\Clinics';
+            $all = $sqlHelper->createAndExecuteQuery($query)->toArray();
+            return ['data' => ['clinics_data' => $all], 'message' => 'Successfully fetched search results'];
+        }
+
         // MODELS
-        $sqlHelper = new SQLHelper();
         $usersModel = new Users();
         $usersToDoctorSpecialty = new UsersToDoctorSpecialties();
         $doctorSpecialtiesModel = new DoctorSpecialties();
@@ -416,9 +424,6 @@ class UsersController extends AbstractController
         }
 
         $data = $availableDoctors;
-        // ABOVE WORKS
-
-        $data = $availableDoctors;
         $availableByCountry = [];
         $availableByCity = [];
 
@@ -462,7 +467,9 @@ class UsersController extends AbstractController
                'surname' => $surname,
                'rating' => round($avgDoctorRating, 2)
             ];
+        }
 
+        foreach ($data as $doctorId) {
             $clinicId = $clinicsAppointmentSlotsModel->findFirstByDoctorId($doctorId)->clinics_id;
             $clinicName = $clinicsModel::findFirstById($clinicId)->name;
             $clinicAddress = $clinicsModel::findFirstById($clinicId)->address;
@@ -471,14 +478,29 @@ class UsersController extends AbstractController
             $avgClinicRatingQuery = "SELECT DISTINCT AVG(CR.rating) FROM App\Models\ClinicRatings CR WHERE CR.clinic_id=$clinicId";
             $avgClinicRating = $sqlHelper->createAndExecuteQuery($avgClinicRatingQuery)->toArray()[0]->toArray()[0];
 
-            $clinicsData[] = [
-                'name' =>  $clinicName,
-                'address' => $clinicAddress,
-                'checkup_price' => $clinicCheckup,
-                'operation_price' => $clinicOperation,
-                'rating' => round($avgClinicRating, 2),
-                'doctors_data' => $doctorsData
-            ];
+            if (!empty($clinicsData)) {
+                foreach ($clinicsData as $clinic) {
+                    if ($clinic['name'] !== $clinicName && $clinic['address'] !== $clinicAddress) {
+                        $clinicsData[] = [
+                            'name' =>  $clinicName,
+                            'address' => $clinicAddress,
+                            'checkup_price' => $clinicCheckup,
+                            'operation_price' => $clinicOperation,
+                            'rating' => round($avgClinicRating, 2),
+                            'doctors_data' => $doctorsData
+                        ];
+                    }
+                }
+            } else {
+                $clinicsData[] = [
+                    'name' =>  $clinicName,
+                    'address' => $clinicAddress,
+                    'checkup_price' => $clinicCheckup,
+                    'operation_price' => $clinicOperation,
+                    'rating' => round($avgClinicRating, 2),
+                    'doctors_data' => $doctorsData
+                ];
+            }
         }
 
         return ['data' => ['clinics_data' => $clinicsData], 'message' => 'Successfully fetched search results'];
