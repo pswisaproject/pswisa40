@@ -221,8 +221,8 @@ class UsersController extends AbstractController
           $id        = $user->id;
           $isAuthorized = $sqlHelper->isUserAuthorized($id, 'HANDLE_USER_REGISTRATION');
 
-          $userId     = $this->request->get('userID');
-          $approved   = $this->request->get('approved');
+          $userId     = $this->request->getPost('id');
+          $approved   = $this->request->getPost('isApproved');
           $message    = $this->request->getPost('message');
 
           if (!$isAuthorized) {
