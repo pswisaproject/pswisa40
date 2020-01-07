@@ -15,7 +15,7 @@ $usersCollection->post('/handleUserRegister', 'handleUserRegistrationAction');
 $usersCollection->post('/searchClinics', 'searchClinicsAction');
 
 // user collection PUT 
-$usersCollection->put('/editProfile', 'editProfileAction');
+$usersCollection->post('/editProfile', 'editProfileAction');
 
 // user collection GET
 $usersCollection->get('/list', 'getUsersListAction');
@@ -24,6 +24,7 @@ $usersCollection->get('/confirmRegistration', 'userConfirmationRegistrationActio
 $usersCollection->get('/getUserInfo', 'getUserInfoAction');
 $usersCollection->get('/getUserMedicalRecords', 'getUserMedicalRecordsAction');
 $usersCollection->get('/getClinics', 'getClinicsAction');
+$usersCollection->get('/getProcedures', 'getUserProceduresAction');
 
 // tests
 $usersCollection->get('/getTest', 'testGetAction');

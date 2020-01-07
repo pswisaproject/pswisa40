@@ -6,6 +6,7 @@ use App\Controllers\HttpExceptions\Http400Exception;
 use App\Models\Users;
 use App\Services\UsersService;
 use App\Helpers\Validators\RegistrationValidator;
+use App\Helpers\Validators\EditProfileValidation;
 use App\Helpers\CommonHelpers;
 use App\Helpers\MailerHelper;
 use App\Helpers\HashTokenHelper;
@@ -119,6 +120,82 @@ class UsersController extends AbstractController
       }
   }
 
+  public function editProfileAction()
+  {
+      $errors = [];
+      try {
+          $data = $this->request->getPost();
+
+          if (empty($data)) {
+              $errors[] =
+                  [
+                  'invalid_edit' => 'Edit profile request cannot be empty.',
+                  'error_code'   => UsersService::ERROR_EMPTY_EDIT_PROFILE_REQUEST
+              ];
+          }
+
+          $user = CommonHelpers::getCurrentUser($this->request);
+          $keys = array_keys($data);
+
+          // validation
+          $validation = new EditProfileValidation();
+          $messages   = $validation->validate($data);
+          if (count($messages)) {
+              foreach ($messages as $message) {
+                  $errors[] = [
+                      'error_code'           => $message->getCode(),
+                      'invalid_edit_profile' => $message->getMessage()];
+              }
+              $exception = new Http400Exception(_('Input parameters validation error'), self::ERROR_INVALID_REQUEST);
+              throw $exception->addErrorDetails($errors);
+          }
+
+          foreach ($keys as $key) {
+              if ($key == 'id') {
+                  $errors[] =
+                      [
+                      'invalid_edit' => 'Username cannot be changed.',
+                      'error_code'   => UsersService::ERROR_EDIT_PROFILE_USERNAME
+                  ];
+              }
+
+              if ($key == 'active') {
+                  $errors[] =
+                      [
+                      'invalid_edit' => 'Active cannot be changed.',
+                      'error_code'   => UsersService::ERROR_EDIT_PROFILE_ACTIVE
+                  ];
+              }
+
+              if ($key == 'verified') {
+                  $errors[] =
+                      [
+                      'invalid_edit' => 'Verified cannot be changed.',
+                      'error_code'   => UsersService::ERROR_EDIT_PROFILE_VERIFIED
+                  ];
+              }
+              $user->$key = $data[$key];
+          }
+
+          if ($errors) {
+              $exception = new Http400Exception(_('Bad request.'), self::ERROR_INVALID_REQUEST);
+              throw $exception->addErrorDetails($errors);
+          }
+
+          UsersService::editProfile($user);
+          return ['data' => [$data], 'message' => 'Profile successfully edited!'];
+      } catch (ServiceException $e) {
+          switch ($e->getCode()) {
+              case UsersService::ERROR_INVALID_USER_CREDENTIALS:
+                  throw new Http422Exception($e->getMessage(), $e->getCode(), $e);
+              default:
+                  throw new Http500Exception(_('Internal Server Error'), $e->getCode(), $e);
+          }
+      } catch (\Throwable $e) {
+          throw $e;
+      }
+  }
+
   public function getUserInfoAction() {
       try {
           $user      = CommonHelpers::getCurrentUser($this->request);
@@ -165,10 +242,30 @@ class UsersController extends AbstractController
       }
   }
 
-  public function editProfileAction()
-  {
-      
+  public function getUserProceduresAction() {
+    try {
+        $user      = CommonHelpers::getCurrentUser($this->request);
+        if (!$user) {
+            throw new \Exception('User does not exist!');
+        }
+
+        $patientId = $user->id;
+        $patientDiagnosisList = UsersService::getPatientProceduresList($patientId);
+
+        $procedures = [];
+        // for ($i = 0; $i < count($patientDiagnosisList); $i++) {
+        //     $name = Diagnosis::findFirstById($patientDiagnosisList[$i])->name;
+        //     $diagnosisNames[] = $name;
+        // }
+
+        return ['data' => ['diagnosis_names' => $diagnosisNames], 
+                'message' => 'Successfully fetched user medical records!'];
+    } catch (\Throwable $th) {
+        throw $th;
+    }
   }
+
+
 
   public function getPendingUsersListAction()
   {
