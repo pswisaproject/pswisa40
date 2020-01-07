@@ -32,6 +32,13 @@ class UsersService extends AbstractService
     const ERROR_UNAUTHORIZED = 11004;
 
     /* --------------- USER SERVICE FUNCTIONS --------------- */
+
+    /* --------------------- EDIT PROFILE ERRORS ------------------ */
+
+    const ERROR_EMPTY_EDIT_PROFILE_REQUEST = 12001;
+    const ERROR_EDIT_PROFILE_ID = 12002;
+    const ERROR_EDIT_PROFILE_ACTIVE = 12003;
+    const ERROR_EDIT_PROFILE_VERIFIED = 12004;
     
     public function getUsersList()
     {
@@ -85,12 +92,34 @@ class UsersService extends AbstractService
         }
     }
 
-    public function editProfile()
+    public function editProfile($user)
     {
-      
+        try {
+            $user->updated_at = date("Y:m:d H:i:s");
+
+            if (!$user->update()) {
+                throw new \Exception('Unable to edit user profile.');
+            }
+        } catch (\Throwable $th) {
+            throw $th;
+        }
     }
 
     public function getPendingUsersList() {
+        try {
+            $pendingUsers = Users::findByRegRequest('PENDING');
+
+            if (!$pendingUsers) {
+                return [];
+            }
+
+            return $pendingUsers->toArray();
+        } catch (\PDOException $e) {
+            throw new ServiceException($e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    public function getPatientProceduresList() {
         try {
             $pendingUsers = Users::findByRegRequest('PENDING');
 
